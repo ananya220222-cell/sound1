@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>คลื่นเสียง – พจนานุกรมนักปราบเสียงรบกวน</title>
+<style>
+/* =====================================================================
+   1) THEME  – สไตล์ "พจนานุกรม": กระดาษสีครีม หมึกน้ำตาล ริบบิ้นคั่นหนังสือ
+   ===================================================================== */
+:root{
+  --desk:#2b1d12; --paper:#f7edd3; --paper2:#eadcb4; --ink:#2b1d0e;
+  --acc:#8c2f1b; --gold:#c9993a; --blue:#2f5f8a; --green:#2e7d4f; --red:#b3261e;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{
+  font-family:'Sarabun','Noto Sans Thai','Tahoma',sans-serif; color:var(--ink);
+  background:radial-gradient(ellipse at top,#4a3320,#1f140b); min-height:100vh;
+}
+#app{max-width:1080px;margin:0 auto;padding:10px}
+
+/* ---------- แถบด้านบน + แท็บดัชนี ---------- */
+.top{display:flex;align-items:flex-end;gap:8px;flex-wrap:wrap;margin-bottom:0}
+.brand{font:800 20px/1.2 'Noto Serif Thai','Sarabun',serif;color:var(--paper);flex:1;min-width:180px;padding-bottom:6px}
+.tabs{display:flex;gap:4px}
+.tab{border:0;background:var(--paper2);color:var(--ink);font:700 14px 'Sarabun',sans-serif;padding:7px 14px;
+  border-radius:9px 9px 0 0;cursor:pointer;border-bottom:3px solid transparent}
+.tab:hover{background:var(--gold)}
+.tab.on{background:var(--paper);border-bottom-color:var(--acc)}
+.chip{color:var(--paper);font-size:14px;padding-bottom:6px}
+.icon-btn{border:2px solid var(--paper2);background:transparent;color:var(--paper);border-radius:8px;padding:3px 9px;
+  font-size:16px;cursor:pointer;margin-bottom:5px}
+
+/* ---------- เล่มหนังสือ ---------- */
+.book{
+  position:relative;border-left:14px solid var(--acc);border-radius:6px 14px 14px 6px;overflow:hidden;min-height:560px;
+  background:var(--paper) repeating-linear-gradient(0deg,rgba(120,90,40,.05) 0 2px,transparent 2px 6px);
+  box-shadow:0 12px 30px rgba(0,0,0,.55), inset 0 0 60px rgba(120,80,20,.18);
+}
+.book::after{ /* ริบบิ้นคั่นหน้า */
+  content:'';position:absolute;top:0;right:26px;width:22px;height:62px;background:var(--acc);pointer-events:none;
+  clip-path:polygon(0 0,100% 0,100% 100%,50% 82%,0 100%);
+}
+.book.shake{animation:shake .45s}
+@keyframes shake{0%,100%{transform:translate(0)}20%{transform:translate(-9px,3px)}40%{transform:translate(8px,-4px)}60%{transform:translate(-6px,2px)}80%{transform:translate(4px,-2px)}}
+
+.screen{display:none}
+.screen.active{display:block}
+.screen.two.active{display:grid;grid-template-columns:1fr 1fr}
+.page{padding:18px 22px;min-width:0}
+.page.R{border-left:1px solid rgba(0,0,0,.2);background:linear-gradient(90deg,rgba(0,0,0,.08),transparent 30px)}
+@media(max-width:820px){
+  .screen.two.active{grid-template-columns:1fr}
+  .page.R{border-left:0;border-top:1px solid rgba(0,0,0,.2);background:none}
+  .page{padding:14px}
+}
+
+/* ---------- ตัวอักษรแบบพจนานุกรม ---------- */
+.headword{font:800 clamp(34px,6vw,56px)/1.15 'Noto Serif Thai','Sarabun',serif;color:var(--acc);margin:6px 0 0}
+.phon{font-style:italic;color:#6b5636;margin:2px 0 8px}
+.def{line-height:1.55;font-size:16px}
+.def b{color:var(--acc)}
+h2.sec{font:800 24px 'Noto Serif Thai','Sarabun',serif;margin:4px 0 10px;border-bottom:2px double var(--ink);padding-bottom:4px}
+.term{font:800 clamp(24px,4vw,34px)/1.2 'Noto Serif Thai','Sarabun',serif;color:var(--acc);margin:4px 0 0}
+.tag{display:inline-block;background:var(--ink);color:var(--paper);font-size:12px;font-weight:700;padding:2px 9px;border-radius:99px}
+.entryHead{display:flex;justify-content:space-between;align-items:center;font-size:13px;color:#6b5636}
+.question{font-size:17px;font-weight:600;line-height:1.5;margin:8px 0}
+
+canvas.cv{display:block;width:100%;aspect-ratio:16/9;height:auto;border:3px solid var(--ink);border-radius:8px;background:#fbf3dc}
+canvas.cv.wide{aspect-ratio:2/1}
+
+/* ---------- ปุ่ม / ฟอร์ม ---------- */
+.btn{border:2px solid var(--ink);background:var(--gold);color:var(--ink);font:800 17px 'Sarabun',sans-serif;
+  padding:10px 18px;border-radius:12px;cursor:pointer;box-shadow:0 4px 0 var(--ink);transition:.12s}
+.btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 var(--ink)}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.ghost{background:#fffaf0}
+.btn.red{background:#e9a89f}
+.btn.block{display:block;width:100%;margin:10px 0}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row .btn{flex:1}
+label.f{display:block;font-weight:700;margin:10px 0 3px}
+input[type=text],input[type=number]{width:100%;padding:10px 12px;font:600 17px 'Sarabun',sans-serif;background:#fffaf0;
+  border:2px solid var(--ink);border-radius:10px}
+input[type=range]{width:100%;accent-color:var(--acc)}
+.err{color:var(--red);font-weight:700;min-height:22px}
+
+/* ---------- ตัวเลือกคำตอบ ---------- */
+.choice{display:flex;gap:10px;align-items:center;width:100%;text-align:left;padding:10px 12px;margin:8px 0;background:#fffaf0;
+  border:2px solid var(--ink);border-radius:10px;font:600 16px/1.35 'Sarabun',sans-serif;cursor:pointer;transition:.15s;box-shadow:0 3px 0 var(--ink);color:var(--ink)}
+.choice:hover:not(:disabled){transform:translateY(-1px);background:#fff3c9}
+.choice b{flex:none;width:30px;height:30px;border-radius:50%;background:var(--ink);color:var(--paper);display:grid;place-items:center}
+.choice:disabled{cursor:default}
+.choice.right{background:#cdeccf;border-color:var(--green)}
+.choice.wrong{background:#f6c6bf;border-color:var(--red);animation:shake .4s}
+
+.feedback{margin-top:10px;padding:10px 14px;border:2px dashed var(--ink);border-radius:10px;background:#fff7dd}
+.feedback h3{margin:0 0 4px;font:800 20px 'Noto Serif Thai','Sarabun',serif}
+.feedback h3.ok{color:var(--green)} .feedback h3.no{color:var(--red)}
+.feedback p{margin:4px 0 8px;line-height:1.5}
+.feedback .lbl{font-size:12px;font-weight:800;color:var(--acc);letter-spacing:.5px}
+
+/* ---------- Dashboard ---------- */
+.dash{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.dcell{background:#fffaf0;border:2px solid var(--ink);border-radius:10px;padding:6px 8px;text-align:center}
+.dcell small{display:block;font-size:12px;color:#6b5636;font-weight:700}
+.dcell b{font:800 22px 'Sarabun',sans-serif}
+.dcell.low b{color:var(--red);animation:blink .6s infinite}
+@keyframes blink{50%{opacity:.35}}
+.bar{display:block;height:6px;background:#d9c791;border-radius:9px;margin-top:3px;overflow:hidden}
+.bar u{display:block;height:100%;background:var(--green);width:100%;text-decoration:none}
+.who{margin-top:8px;font-size:14px;color:#6b5636;display:flex;justify-content:space-between;align-items:center;gap:6px}
+.who button{font-size:13px;padding:3px 10px}
+
+/* ---------- ตารางอันดับ / สถิติ ---------- */
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.2);text-align:left}
+th{background:var(--paper2)}
+tr.me td{background:#fff0b3;font-weight:800}
+.stat{display:flex;justify-content:space-between;border-bottom:1px dotted var(--ink);padding:6px 0;font-size:17px}
+.bigscore{font:800 56px/1 'Noto Serif Thai','Sarabun',serif;color:var(--acc)}
+.pad{padding:18px 22px}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===== แถบด้านบน ===== -->
+  <div class="top">
+    <div class="brand">📖 พจนานุกรมคลื่นเสียง</div>
+    <div class="tabs" id="tabs">
+      <button class="tab" data-go="sMenu">หน้าแรก</button>
+      <button class="tab" data-go="sHelp">วิธีเล่น</button>
+      <button class="tab" data-go="sBoard">อันดับ</button>
+    </div>
+    <div class="chip" id="chipPlayer"></div>
+    <button class="icon-btn" id="btnMute" title="เปิด/ปิดเสียง">🔊</button>
+  </div>
+
+  <div class="book" id="book">
+
+    <!-- ========== หน้าลงทะเบียนผู้เล่น ========== -->
+    <section class="screen two" id="sLogin">
+      <div class="page L">
+        <canvas class="cv" data-draw="hero"></canvas>
+        <h1 class="headword">คลื่นเสียง</h1>
+        <div class="phon">/kʰlɯ̂ːn sǐaŋ/ · นาม (n.) · Sound wave</div>
+        <p class="def"><b>1.</b> คลื่นกลตามยาวที่เกิดจากการสั่นของแหล่งกำเนิด แล้วถ่ายโอนพลังงานผ่านตัวกลาง<br>
+        <b>2.</b> เกมปราบ <b>"เจ้าเสียงรบกวน"</b> ด้วยความรู้ฟิสิกส์ ม.5</p>
+      </div>
+      <div class="page R">
+        <h2 class="sec">ลงทะเบียนผู้เล่น</h2>
+        <label class="f" for="inName">ชื่อ – สกุล</label>
+        <input type="text" id="inName" maxlength="40" placeholder="เช่น สมชาย ใจดี" autocomplete="name">
+        <label class="f" for="inClass">ชั้น/ห้อง</label>
+        <input type="text" id="inClass" maxlength="10" placeholder="เช่น ม.5/2">
+        <label class="f" for="inNo">เลขที่</label>
+        <input type="number" id="inNo" min="1" max="99" placeholder="เช่น 12">
+        <div class="err" id="loginErr"></div>
+        <button class="btn block" id="btnLogin">📖 เปิดพจนานุกรม</button>
+      </div>
+    </section>
+
+    <!-- ========== เมนูหลัก ========== -->
+    <section class="screen two" id="sMenu">
+      <div class="page L">
+        <canvas class="cv" data-draw="hero"></canvas>
+        <h1 class="headword">คลื่นเสียง</h1>
+        <div class="phon">ภารกิจ: ปราบเจ้าเสียงรบกวน</div>
+        <p class="def">ตอบคำถามให้ถูกเพื่อยิงคลื่นเสียงใส่เจ้าเสียงรบกวน ตอบผิดตัวละครจะแตกกระจายและเสียพลังชีวิต!</p>
+      </div>
+      <div class="page R">
+        <h2 class="sec">สวัสดี, <span id="mName"></span></h2>
+        <div class="stat"><span>คะแนนสูงสุดของคุณ</span><b id="mBest">0</b></div>
+        <div class="stat"><span>จำนวนครั้งที่เล่น</span><b id="mPlays">0</b></div>
+        <button class="btn block" id="btnStart">⚔️ เริ่มภารกิจ</button>
+        <button class="btn ghost block" data-go="sHelp">❓ วิธีเล่น</button>
+        <button class="btn ghost block" data-go="sBoard">🏆 อันดับคะแนน</button>
+        <button class="btn ghost block" id="btnSwitch">👤 เปลี่ยนผู้เล่น</button>
+      </div>
+    </section>
+
+    <!-- ========== หน้าเล่นเกม ========== -->
+    <section class="screen two" id="sGame">
+      <div class="page L">
+        <canvas class="cv" id="stage" data-draw="stage"></canvas>
+        <!-- Dashboard เรียลไทม์ -->
+        <div class="dash">
+          <div class="dcell"><small>คะแนน</small><b id="dScore">0</b></div>
+          <div class="dcell" id="dTimeBox"><small>เวลาที่เหลือ</small><b id="dTime">2:30</b><i class="bar"><u id="dBar"></u></i></div>
+          <div class="dcell"><small>พลังชีวิต</small><b id="dHearts">❤❤❤</b></div>
+          <div class="dcell"><small>คอมโบ</small><b id="dStreak">0</b></div>
+          <div class="dcell"><small>รายการที่</small><b id="dRound">1/12</b></div>
+          <div class="dcell"><small>ความแม่นยำ</small><b id="dAcc">–</b></div>
+        </div>
+        <div class="who"><span id="dWho"></span><button class="btn ghost" id="btnQuit">ออกจากเกม</button></div>
+      </div>
+      <div class="page R">
+        <div class="entryHead"><span id="eNo"></span><span class="tag" id="eTag">ศัพท์</span></div>
+        <h2 class="term" id="eTerm"></h2>
+        <div class="phon" id="ePhon"></div>
+        <canvas class="cv" id="illo" data-draw="illo"></canvas>
+        <p class="question" id="eQ"></p>
+
+        <!-- โหมดปรนัย -->
+        <div id="choices"></div>
+
+        <!-- โหมดห้องทดลอง: ปรับคลื่นด้วยแถบเลื่อน -->
+        <div id="lab" hidden>
+          <canvas class="cv wide" id="labCv" data-draw="lab"></canvas>
+          <label class="f">ความถี่ f: <b id="vf">400</b> Hz</label>
+          <input type="range" id="sf" min="100" max="1000" step="10" value="400">
+          <label class="f">แอมพลิจูด A: <b id="va">50</b> %</label>
+          <input type="range" id="sa" min="10" max="100" step="5" value="50">
+          <div class="row" style="margin-top:10px">
+            <button class="btn ghost" id="btnTone">🔊 ฟังเสียง</button>
+            <button class="btn" id="btnCheck">✔ ตรวจคำตอบ</button>
+          </div>
+        </div>
+
+        <!-- เฉลยแบบ "ความหมาย" ในพจนานุกรม -->
+        <div class="feedback" id="feedback" hidden>
+          <h3 id="fbTitle"></h3>
+          <div class="lbl">ความหมาย / คำอธิบาย</div>
+          <p id="fbExp"></p>
+          <button class="btn block" id="btnNext">ข้อต่อไป ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== หน้าสรุปผล ========== -->
+    <section class="screen two" id="sResult">
+      <div class="page L">
+        <canvas class="cv" data-draw="hero"></canvas>
+        <h1 class="headword" id="rTitle">ผลลัพธ์</h1>
+        <div class="phon" id="rSub"></div>
+        <div class="bigscore" id="rScore">0</div>
+        <div class="phon">คะแนนรวม</div>
+      </div>
+      <div class="page R">
+        <h2 class="sec">บันทึกผลการเล่น</h2>
+        <div id="rStats"></div>
+        <button class="btn block" id="btnAgain">🔁 เล่นอีกครั้ง</button>
+        <div class="row">
+          <button class="btn ghost" data-go="sBoard">🏆 อันดับ</button>
+          <button class="btn ghost" id="btnCsvR">⬇ CSV</button>
+          <button class="btn ghost" data-go="sMenu">เมนู</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== อันดับ ========== -->
+    <section class="screen" id="sBoard">
+      <div class="pad">
+        <h2 class="sec">🏆 ทำเนียบนักปราบเสียงรบกวน (10 อันดับแรกในเครื่องนี้)</h2>
+        <div style="overflow-x:auto"><table id="tbl"></table></div>
+        <div class="row" style="margin-top:14px;max-width:520px">
+          <button class="btn ghost" id="btnCsv">⬇ ดาวน์โหลดผลทั้งหมด (CSV)</button>
+          <button class="btn red" id="btnClear">🗑 ล้างข้อมูล</button>
+          <button class="btn" data-go="sMenu">กลับ</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== วิธีเล่น ========== -->
+    <section class="screen" id="sHelp">
+      <div class="pad">
+        <h2 class="sec">❓ วิธีเล่น (คู่มือการใช้พจนานุกรม)</h2>
+        <p class="def"><b>1. เป้าหมาย</b> – ตอบให้ถูกเพื่อลดพลังของ "เจ้าเสียงรบกวน" ให้หมด (ต้องตอบถูกประมาณ 70% ของทั้งหมด) ก่อนเวลาหรือพลังชีวิตหมด</p>
+        <p class="def"><b>2. รูปแบบโจทย์</b> – โจทย์ปรนัยจากหัวข้อคลื่นเสียง และ <b>ห้องทดลอง</b> ที่ให้เลื่อนแถบความถี่/แอมพลิจูดของคลื่นให้ได้ตามเงื่อนไข (กดฟังเสียงได้)</p>
+        <p class="def"><b>3. คะแนน</b> – ตอบถูกได้ 100 คะแนน (ห้องทดลอง 150) + โบนัสความเร็วสูงสุด 50 + โบนัสคอมโบต่อเนื่อง (สูงสุด 50) ถ้าชนะจะได้โบนัสเวลาที่เหลืออีกวินาทีละ 2 คะแนน</p>
+        <p class="def"><b>4. บทลงโทษ</b> – ตอบผิด: ตัวละครบล็อกแตกกระจายพร้อมเสียง "OOF!" เสียพลังชีวิต 1 ดวง หักคะแนน 50 และเวลาลด 5 วินาที</p>
+        <p class="def"><b>5. เวลา</b> – นับถอยหลัง 150 วินาที และจะหยุดนับระหว่างอ่านเฉลย</p>
+        <p class="def"><b>6. คีย์ลัด</b> – กดเลข 1–4 บนคีย์บอร์ดเพื่อเลือกคำตอบ, กด Enter เพื่อไปข้อต่อไป</p>
+        <button class="btn" style="max-width:260px" data-go="sMenu">กลับหน้าแรก</button>
+      </div>
+    </section>
+
+  </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   0) CONFIG – ปรับค่าเกมได้ที่นี่
+   ===================================================================== */
+const CONFIG = {
+  totalTime: 150,        // เวลารวม (วินาที)
+  hearts: 3,             // พลังชีวิต
+  questionsPerRun: 10,   // จำนวนข้อปรนัยต่อรอบ
+  labsPerRun: 2,         // จำนวนโจทย์ห้องทดลองต่อรอบ
+  winRatio: 0.7,         // ต้องตอบถูกกี่ส่วนของทั้งหมดจึงปราบมอนสเตอร์ได้
+  baseScore: 100,        // คะแนนข้อปรนัย
+  labScore: 150,         // คะแนนห้องทดลอง
+  wrongScorePenalty: 50, // หักคะแนนเมื่อผิด
+  wrongTimePenalty: 5,   // หักเวลาเมื่อผิด (วินาที)
+  speedBonusMax: 50      // โบนัสความเร็วสูงสุด
+};
+
+/* =====================================================================
+   1) ฐานข้อมูลคำถาม – แก้ไข/เพิ่มข้อได้ที่ Array นี้
+   รูปแบบ: { term:หัวข้อ(คำเอก), img:ชื่อภาพประกอบ, q:โจทย์, c:[ตัวเลือก], a:ดัชนีข้อที่ถูก (เริ่ม 0), exp:คำอธิบาย }
+   img ที่ใช้ได้: wave vacuum ear bat fork speaker iron thunder ambulance tube sonar
+   ===================================================================== */
+const QUESTIONS = [
+  { term:'คลื่นเสียง', img:'wave', q:'คลื่นเสียงจัดเป็นคลื่นประเภทใด?',
+    c:['คลื่นกลตามขวาง','คลื่นกลตามยาว','คลื่นแม่เหล็กไฟฟ้า','คลื่นผิวน้ำ'], a:1,
+    exp:'เสียงเกิดจากการอัดและขยายของโมเลกุลตัวกลางในแนวเดียวกับทิศการเคลื่อนที่ของคลื่น จึงเป็นคลื่นกลตามยาว' },
+  { term:'ตัวกลาง', img:'vacuum', q:'ใส่กระดิ่งไฟฟ้าที่กำลังดังไว้ในโหลแก้ว แล้วสูบอากาศออกจนเกือบเป็นสุญญากาศ จะได้ยินเสียงเป็นอย่างไร?',
+    c:['ดังขึ้น','เบาลงจนแทบไม่ได้ยิน','ความถี่สูงขึ้น','ไม่เปลี่ยนแปลง'], a:1,
+    exp:'เสียงเป็นคลื่นกล ต้องอาศัยตัวกลางในการถ่ายโอนพลังงาน เมื่อแทบไม่มีอากาศ เสียงจึงเดินทางออกมาไม่ได้' },
+  { term:'ช่วงเสียงที่ได้ยิน', img:'ear', q:'ช่วงความถี่ที่หูของมนุษย์ปกติได้ยินคือข้อใด?',
+    c:['2 – 2,000 Hz','20 – 20,000 Hz','200 – 200,000 Hz','0 – 2,000 Hz'], a:1,
+    exp:'หูมนุษย์ได้ยินประมาณ 20 – 20,000 Hz เรียกว่า ช่วงเสียงที่ได้ยิน (audible range)' },
+  { term:'อัลตราซาวด์', img:'bat', q:'ค้างคาวใช้คลื่นเสียงชนิดใดในการหาตำแหน่งเหยื่อ?',
+    c:['อินฟราซาวด์','เสียงที่ได้ยินปกติ','อัลตราซาวด์','คลื่นวิทยุ'], a:2,
+    exp:'อัลตราซาวด์มีความถี่สูงกว่า 20,000 Hz ส่งออกไปแล้วสะท้อนกลับจากเหยื่อ (echolocation)' },
+  { term:'ระดับเสียง (pitch)', img:'fork', q:'ปริมาณใดของคลื่นเสียงที่ทำให้เรารับรู้ว่าเสียง "แหลม" หรือ "ทุ้ม"?',
+    c:['แอมพลิจูด','ความเร็ว','ความถี่','เฟสเริ่มต้น'], a:2,
+    exp:'ความถี่สูง → เสียงแหลม, ความถี่ต่ำ → เสียงทุ้ม' },
+  { term:'ความดัง', img:'speaker', q:'เมื่อแอมพลิจูดของคลื่นเสียงเพิ่มขึ้น (ความถี่คงเดิม) จะมีผลอย่างไร?',
+    c:['เสียงดังขึ้น','เสียงแหลมขึ้น','เสียงเดินทางเร็วขึ้น','ความยาวคลื่นสั้นลง'], a:0,
+    exp:'แอมพลิจูดมากแปลว่าพลังงานของคลื่นมาก ทำให้เสียงดังขึ้น ส่วนระดับเสียงขึ้นกับความถี่' },
+  { term:'ความเร็วคลื่น', img:'wave', q:'คลื่นเสียงความถี่ 500 Hz มีความยาวคลื่น 0.68 m ความเร็วเสียงเป็นเท่าใด?',
+    c:['170 m/s','340 m/s','735 m/s','1,360 m/s'], a:1,
+    exp:'v = fλ = 500 × 0.68 = 340 m/s' },
+  { term:'ความเร็วเสียง', img:'iron', q:'เสียงเดินทางได้เร็วที่สุดในตัวกลางใด?',
+    c:['อากาศ','น้ำ','เหล็ก','สุญญากาศ'], a:2,
+    exp:'โดยทั่วไปความเร็วเสียง ของแข็ง > ของเหลว > แก๊ส เพราะโมเลกุลอยู่ชิดและแรงยึดเหนี่ยวมาก (เหล็กประมาณ 5,000 m/s)' },
+  { term:'ฟ้าแลบ–ฟ้าร้อง', img:'thunder', q:'เห็นฟ้าแลบแล้ว 3 วินาทีต่อมาจึงได้ยินเสียงฟ้าร้อง ถ้าความเร็วเสียง 340 m/s ฟ้าแลบอยู่ห่างประมาณเท่าใด? (ไม่คิดเวลาของแสง)',
+    c:['340 m','680 m','1,020 m','1,360 m'], a:2,
+    exp:'s = vt = 340 × 3 = 1,020 m' },
+  { term:'ปรากฏการณ์ดอปเลอร์', img:'ambulance', q:'รถพยาบาลเปิดไซเรนวิ่งเข้าหาเรา ความถี่ที่เราได้ยินเมื่อเทียบกับความถี่จริงของไซเรนเป็นอย่างไร?',
+    c:['สูงขึ้น','ต่ำลง','เท่าเดิม','เป็นศูนย์'], a:0,
+    exp:'แหล่งกำเนิดเคลื่อนเข้าหา ทำให้ความยาวคลื่นที่ผู้ฟังรับสั้นลง จึงได้ยินความถี่สูงขึ้น (ความเร็วเสียงในอากาศไม่เปลี่ยน)' },
+  { term:'บีตส์ (beats)', img:'wave', q:'เสียงสองเสียงความถี่ 440 Hz และ 444 Hz มารวมกัน จะได้ยินเสียงดัง–เบาเป็นจังหวะกี่ครั้งต่อวินาที?',
+    c:['2 ครั้ง','4 ครั้ง','8 ครั้ง','884 ครั้ง'], a:1,
+    exp:'ความถี่บีตส์ = |f₁ − f₂| = |444 − 440| = 4 Hz' },
+  { term:'หลอดปลายเปิด', img:'tube', q:'หลอดเสียงปลายเปิดทั้งสองด้านยาว 0.5 m ความเร็วเสียง 340 m/s ความถี่มูลฐานเท่าใด?',
+    c:['170 Hz','340 Hz','680 Hz','1,360 Hz'], a:1,
+    exp:'ปลายเปิดทั้งสองข้าง f₁ = v/2L = 340 / (2×0.5) = 340 Hz' },
+  { term:'หลอดปลายปิด', img:'tube', q:'หลอดเสียงปลายปิดหนึ่งด้านยาว 0.17 m ความเร็วเสียง 340 m/s ความถี่มูลฐานเท่าใด?',
+    c:['250 Hz','500 Hz','1,000 Hz','2,000 Hz'], a:1,
+    exp:'ปลายปิดหนึ่งข้าง f₁ = v/4L = 340 / (4×0.17) = 500 Hz' },
+  { term:'ระดับความเข้มเสียง', img:'speaker', q:'เสียงที่มีความเข้ม 10⁻⁶ W/m² มีระดับความเข้มเสียงกี่เดซิเบล? (I₀ = 10⁻¹² W/m²)',
+    c:['6 dB','12 dB','60 dB','120 dB'], a:2,
+    exp:'β = 10 log(I/I₀) = 10 log(10⁻⁶ / 10⁻¹²) = 10 log 10⁶ = 60 dB' },
+  { term:'เดซิเบล (dB)', img:'speaker', q:'ถ้าความเข้มเสียงเพิ่มขึ้น 10 เท่า ระดับความเข้มเสียงจะเพิ่มขึ้นกี่ dB?',
+    c:['1 dB','10 dB','20 dB','100 dB'], a:1,
+    exp:'β₂ − β₁ = 10 log(10) = 10 dB (ความเข้มเพิ่มทีละ 10 เท่า ระดับเพิ่มทีละ 10 dB)' },
+  { term:'ความเข้มเสียงกับระยะทาง', img:'sonar', q:'แหล่งกำเนิดเสียงแบบจุดแผ่เสียงออกทุกทิศ เมื่อผู้ฟังอยู่ไกลออกไปเป็น 2 เท่าของเดิม ความเข้มเสียงเป็นกี่เท่าของเดิม?',
+    c:['1/2','1/4','1/8','2 เท่า'], a:1,
+    exp:'I = P/(4πr²) ดังนั้น I ∝ 1/r² เมื่อ r เป็น 2 เท่า I จะเหลือ 1/4' },
+  { term:'เสียงก้อง (echo)', img:'sonar', q:'จะได้ยินเสียงสะท้อนแยกจากเสียงเดิมได้ชัดเจน เสียงสะท้อนต้องมาถึงหูห่างจากเสียงเดิมอย่างน้อยประมาณเท่าใด?',
+    c:['0.001 s','0.01 s','0.1 s','1 s'], a:2,
+    exp:'หูมนุษย์แยกเสียงสองเสียงได้เมื่อห่างกันอย่างน้อยประมาณ 0.1 วินาที' },
+  { term:'การแทรกสอด', img:'wave', q:'คลื่นเสียงจากลำโพงสองตัวที่เฟสตรงกันแทรกสอดแบบเสริมกัน เมื่อผลต่างระยะทางเท่ากับข้อใด? (n = 0, 1, 2, …)',
+    c:['(n + ½)λ','nλ','λ/4','ไม่ขึ้นกับ λ'], a:1,
+    exp:'แทรกสอดเสริม: ผลต่างระยะทาง = nλ (เฟสตรงกัน) ส่วนแทรกสอดหักล้าง: (n + ½)λ' },
+  { term:'อุณหภูมิกับเสียง', img:'wave', q:'เมื่ออุณหภูมิของอากาศสูงขึ้น ความเร็วเสียงในอากาศเป็นอย่างไร?',
+    c:['ลดลง','เพิ่มขึ้น','คงที่','เป็นศูนย์'], a:1,
+    exp:'v ≈ 331 + 0.6T (T เป็น °C) อุณหภูมิสูงขึ้น โมเลกุลเคลื่อนที่เร็วขึ้น เสียงจึงเดินทางเร็วขึ้น' },
+  { term:'การหักเหของเสียง', img:'iron', q:'เสียงเดินทางจากอากาศเข้าสู่น้ำ ปริมาณใดไม่เปลี่ยนแปลง?',
+    c:['ความเร็ว','ความยาวคลื่น','ความถี่','ทั้งความเร็วและความยาวคลื่น'], a:2,
+    exp:'ความถี่ถูกกำหนดโดยแหล่งกำเนิด จึงคงเดิม ส่วนความเร็วและความยาวคลื่นเปลี่ยนตามตัวกลาง' },
+  { term:'การสั่นพ้อง', img:'fork', q:'ส้อมเสียงสองอันวางใกล้กัน เมื่อเคาะอันหนึ่งอีกอันสั่นตามได้ชัดเจน (สั่นพ้อง) เพราะสองอันมีสิ่งใดเท่ากัน?',
+    c:['มวล','ขนาดของก้าน','ความถี่ธรรมชาติ','สี'], a:2,
+    exp:'การสั่นพ้องเกิดเมื่อความถี่ของแรงที่มากระตุ้นเท่ากับความถี่ธรรมชาติของวัตถุ ทำให้แอมพลิจูดการสั่นมากขึ้นมาก' },
+  { term:'แก้วหู', img:'ear', q:'ส่วนใดของหูที่สั่นเมื่อคลื่นเสียงมากระทบ ก่อนส่งการสั่นต่อไปยังกระดูกค้อน ทั่ง โกลน?',
+    c:['หอยโข่ง','แก้วหู','ใบหู','ท่อยูสเตเชียน'], a:1,
+    exp:'แก้วหูเป็นเยื่อบาง ๆ ที่สั่นตามความดันอากาศ แล้วส่งการสั่นผ่านกระดูกหูสามชิ้นไปยังหูชั้นใน' },
+  { term:'อัตราส่วนความเข้มเสียง', img:'speaker', q:'เสียงสนทนา 60 dB กับเสียงเครื่องยนต์ 120 dB มีความเข้มเสียงต่างกันกี่เท่า?',
+    c:['60 เท่า','1,000 เท่า','10⁶ เท่า','10¹² เท่า'], a:2,
+    exp:'ต่างกัน 60 dB → I₂/I₁ = 10^(60/10) = 10⁶ เท่า' },
+  { term:'โซนาร์', img:'sonar', q:'เรือส่งคลื่นเสียงลงทะเลและรับเสียงสะท้อนจากพื้นทะเลหลัง 2 วินาที ถ้าเสียงในน้ำเร็ว 1,500 m/s ทะเลลึกเท่าใด?',
+    c:['750 m','1,500 m','3,000 m','6,000 m'], a:1,
+    exp:'เสียงเดินทางไป–กลับ ระยะทางรวม = vt = 3,000 m ความลึก = 3,000 / 2 = 1,500 m' },
+  { term:'ความยาวคลื่น', img:'wave', q:'คลื่นเสียงความถี่ 1,700 Hz ในอากาศ (v = 340 m/s) มีความยาวคลื่นเท่าใด?',
+    c:['0.1 m','0.2 m','0.5 m','5 m'], a:1,
+    exp:'λ = v/f = 340 / 1,700 = 0.2 m' }
+];
+
+/* โจทย์ "ห้องทดลอง": ผู้เล่นเลื่อนแถบ f (Hz) และ A (%) ให้ผ่านเงื่อนไข check(f,a)
+   target = คลื่นเป้าหมายที่วาดเป็นเส้นประ (ใส่ null ถ้าไม่ต้องการแสดง) */
+const LABS = [
+  { term:'ความถี่และแอมพลิจูด', q:'ปรับแถบเลื่อนให้คลื่นของคุณ (เส้นทึบ) ทับกับคลื่นเป้าหมาย (เส้นประ)',
+    start:{f:300,a:40}, target:{f:600,a:70}, check:(f,a)=>Math.abs(f-600)<=20 && Math.abs(a-70)<=5,
+    exp:'คลื่นเป้าหมายมีความถี่ 600 Hz แอมพลิจูด 70% – ความถี่คือจำนวนรอบต่อวินาที ส่วนแอมพลิจูดคือความสูงของคลื่น (สัมพันธ์กับความดัง)' },
+  { term:'เสียงทุ้มและดัง', q:'สร้าง "เสียงทุ้มและดัง": ความถี่ไม่เกิน 300 Hz และแอมพลิจูดตั้งแต่ 80% ขึ้นไป',
+    start:{f:600,a:40}, target:null, check:(f,a)=>f<=300 && a>=80,
+    exp:'เสียงทุ้ม = ความถี่ต่ำ และเสียงดัง = แอมพลิจูดมาก สองอย่างนี้เป็นอิสระต่อกัน' },
+  { term:'เสียงแหลมและเบา', q:'สร้าง "เสียงแหลมและเบา": ความถี่ตั้งแต่ 800 Hz ขึ้นไป และแอมพลิจูดไม่เกิน 30%',
+    start:{f:300,a:70}, target:null, check:(f,a)=>f>=800 && a<=30,
+    exp:'เสียงแหลม = ความถี่สูง และเสียงเบา = แอมพลิจูดน้อย' },
+  { term:'v = fλ', q:'ความเร็วเสียง 340 m/s ต้องการคลื่นที่มีความยาวคลื่น 0.5 m ให้ปรับความถี่ให้ถูกต้อง', hideLambda:true,
+    start:{f:300,a:50}, target:null, check:(f,a)=>Math.abs(f-680)<=10,
+    exp:'f = v/λ = 340 / 0.5 = 680 Hz' },
+  { term:'โน้ตลา (A4)', q:'โน้ตลา (A4) มีความถี่ 440 Hz ให้ปรับเป็นโน้ตลาที่ดังปานกลาง (แอมพลิจูด 40–60%)',
+    start:{f:700,a:90}, target:null, check:(f,a)=>Math.abs(f-440)<=10 && a>=40 && a<=60,
+    exp:'ความถี่ 440 Hz คือมาตรฐานของโน้ตลากลาง (A4) ที่ใช้จูนเครื่องดนตรี' }
+];
+
+/* =====================================================================
+   2) UTILITIES
+   ===================================================================== */
+const $ = id => document.getElementById(id);
+const INK='#2b1d0e', ACC='#8c2f1b', GOLD='#c9993a', BLUE='#2f5f8a', PAPER2='#e8d9ae';
+let T = 0; // เวลาแอนิเมชันรวม (วินาที)
+
+function shuffle(a){ a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];} return a; }
+function setText(el,v){ v=String(v); if(el.textContent!==v) el.textContent=v; }
+function fmtTime(s){ s=Math.max(0,Math.ceil(s)); return Math.floor(s/60)+':'+String(s%60).padStart(2,'0'); }
+function store(k,v){ try{ if(v===undefined){ const r=localStorage.getItem(k); return r?JSON.parse(r):null; } localStorage.setItem(k,JSON.stringify(v)); }catch(e){ return null; } }
+
+/* =====================================================================
+   3) AUDIO – สังเคราะห์เสียงด้วย Web Audio (ไม่ต้องใช้ไฟล์เสียงภายนอก)
+   ===================================================================== */
+const SND = {
+  ctx:null, master:null, muted:false, bgmTimer:null, step:0,
+  init(){
+    if(this.ctx){ if(this.ctx.state==='suspended') this.ctx.resume(); return; }
+    try{
+      const AC=window.AudioContext||window.webkitAudioContext; this.ctx=new AC();
+      this.master=this.ctx.createGain(); this.master.gain.value=this.muted?0:0.6; this.master.connect(this.ctx.destination);
+    }catch(e){ this.ctx=null; }
+  },
+  tone(freq,dur=0.15,type='sine',vol=0.2,delay=0,slideTo=null){
+    if(!this.ctx) return;
+    const t=this.ctx.currentTime+delay, o=this.ctx.createOscillator(), g=this.ctx.createGain();
+    o.type=type; o.frequency.setValueAtTime(freq,t);
+    if(slideTo) o.frequency.exponentialRampToValueAtTime(slideTo,t+dur);
+    g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(Math.max(vol,0.0002),t+0.01);
+    g.gain.exponentialRampToValueAtTime(0.0001,t+dur);
+    o.connect(g); g.connect(this.master); o.start(t); o.stop(t+dur+0.05);
+  },
+  noise(dur=0.1,vol=0.15){
+    if(!this.ctx) return;
+    const n=(this.ctx.sampleRate*dur)|0, b=this.ctx.createBuffer(1,n,this.ctx.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<n;i++) d[i]=(Math.random()*2-1)*(1-i/n);
+    const s=this.ctx.createBufferSource(), g=this.ctx.createGain(); s.buffer=b; g.gain.value=vol;
+    s.connect(g); g.connect(this.master); s.start();
+  },
+  click(){ this.tone(820,0.05,'square',0.06); },
+  correct(){ [523,659,784,1047].forEach((f,i)=>this.tone(f,0.13,'triangle',0.25,i*0.07)); },
+  oof(){ this.tone(330,0.3,'sawtooth',0.3,0,110); this.tone(220,0.32,'square',0.12,0.02,70); this.noise(0.09,0.12); },
+  win(){ [523,659,784,1047,784,1047,1319].forEach((f,i)=>this.tone(f,0.18,'triangle',0.25,i*0.12)); },
+  lose(){ [392,330,262,196].forEach((f,i)=>this.tone(f,0.28,'sawtooth',0.15,i*0.2)); },
+  toggleMute(){ this.muted=!this.muted; if(this.master) this.master.gain.value=this.muted?0:0.6; return this.muted; },
+  /* เพลงประกอบ: อาร์เพจจิโอสเกลเพนทาโทนิก วนซ้ำ */
+  startBgm(){
+    if(!this.ctx || this.bgmTimer) return;
+    const sc=[261.63,293.66,329.63,392,440,523.25];
+    const mel=[0,2,3,5,3,2,4,3, 1,2,3,4,3,2,1,2];
+    const bass=[130.81,98,110,87.31];
+    this.bgmTimer=setInterval(()=>{
+      const s=this.step++;
+      this.tone(sc[mel[s%mel.length]],0.22,'triangle',0.05);
+      if(s%4===0) this.tone(bass[(s/4|0)%4],0.9,'sine',0.07);
+    },260);
+  }
+};
+
+/* =====================================================================
+   4) CANVAS HELPERS + ภาพประกอบ (วาดด้วยโค้ดทั้งหมด ไม่มีไฟล์ภาพ)
+   ===================================================================== */
+function fit(c){
+  const dpr=Math.min(window.devicePixelRatio||1,2), r=c.getBoundingClientRect();
+  if(r.width<2||r.height<2) return null; // ซ่อนอยู่
+  const W=Math.round(r.width*dpr), H=Math.round(r.height*dpr);
+  if(c.width!==W||c.height!==H){ c.width=W; c.height=H; }
+  const g=c.getContext('2d'); g.setTransform(dpr,0,0,dpr,0,0);
+  return {g,w:r.width,h:r.height};
+}
+function label(g,txt,x,y,size=13,col=INK,align='center'){
+  g.fillStyle=col; g.font='700 '+size+'px Sarabun,Tahoma,sans-serif'; g.textAlign=align; g.fillText(txt,x,y);
+}
+/* วงคลื่นแผ่ออกจากจุด (cx,cy) */
+function rings(g,cx,cy,maxR,n,a0,a1,col,speed=0.4){
+  g.strokeStyle=col; g.lineWidth=2;
+  for(let k=0;k<n;k++){
+    const p=(T*speed+k/n)%1; g.globalAlpha=1-p; g.beginPath(); g.arc(cx,cy,p*maxR,a0,a1); g.stroke();
+  }
+  g.globalAlpha=1;
+}
+
+/* ภาพประกอบแต่ละหัวข้อ: ฟังก์ชัน (g, w, h) */
+const ILLO = {
+  wave(g,w,h){ // คลื่นตามยาว: โมเลกุลอัด-ขยาย + กราฟความดัน
+    g.fillStyle=INK;
+    for(let r=0;r<4;r++) for(let i=0;i<40;i++){
+      const x0=(i+.5)/40*w, x=x0+7*Math.sin(x0*0.045-T*4);
+      g.beginPath(); g.arc(x,h*(0.14+0.13*r),2.6,0,6.283); g.fill();
+    }
+    g.strokeStyle=ACC; g.lineWidth=2.5; g.beginPath();
+    for(let x=0;x<=w;x+=3){ const y=h*0.76+h*0.1*Math.cos(x*0.045-T*4); x?g.lineTo(x,y):g.moveTo(x,y); }
+    g.stroke();
+    label(g,'คลื่นตามยาว: อัด – ขยาย',w/2,h*0.96,12);
+  },
+  vacuum(g,w,h){ // กระดิ่งในโหลสุญญากาศ
+    const cx=w/2, top=h*0.1, bot=h*0.78;
+    g.strokeStyle=INK; g.lineWidth=3; g.beginPath(); g.moveTo(w*0.3,bot); g.lineTo(w*0.3,top+30);
+    g.quadraticCurveTo(w*0.3,top,cx,top); g.quadraticCurveTo(w*0.7,top,w*0.7,top+30); g.lineTo(w*0.7,bot); g.stroke();
+    g.fillStyle=INK; g.fillRect(w*0.26,bot,w*0.48,8);
+    const sh=Math.sin(T*35)*2; g.fillStyle=GOLD; g.beginPath(); g.arc(cx+sh,h*0.6,w*0.07,Math.PI,0); g.fill(); g.fillRect(cx-w*0.07+sh,h*0.6,w*0.14,4);
+    g.strokeStyle=INK; g.beginPath(); g.moveTo(cx,bot+8); g.lineTo(cx,h*0.92); g.lineTo(w*0.82,h*0.92); g.stroke();
+    g.strokeRect(w*0.82,h*0.8,w*0.12,h*0.18);
+    label(g,'สุญญากาศ',cx,h*0.3,14,ACC); label(g,'ปั๊มสูบอากาศ',w*0.88,h*0.78,11);
+  },
+  ear(g,w,h){ // หูมนุษย์แบบย่อ
+    rings(g,w*0.04,h*0.5,w*0.28,3,-0.8,0.8,ACC);
+    g.strokeStyle=INK; g.lineWidth=3; g.beginPath(); g.arc(w*0.3,h*0.5,h*0.3,1.9,4.4); g.stroke();
+    g.beginPath(); g.moveTo(w*0.3,h*0.44); g.lineTo(w*0.58,h*0.44); g.moveTo(w*0.3,h*0.56); g.lineTo(w*0.58,h*0.56); g.stroke();
+    const s=Math.sin(T*20)*4; g.strokeStyle=ACC; g.lineWidth=3; g.beginPath(); g.moveTo(w*0.58,h*0.38); g.quadraticCurveTo(w*0.58+s,h*0.5,w*0.58,h*0.62); g.stroke();
+    g.fillStyle=GOLD; [0.66,0.72,0.78].forEach(x=>{ g.beginPath(); g.arc(w*x,h*0.5,5,0,6.283); g.fill(); });
+    g.strokeStyle=INK; g.lineWidth=2.5; g.beginPath(); for(let a=0;a<12;a+=0.2){ const r=2+a*2.4,x=w*0.89+Math.cos(a)*r,y=h*0.5+Math.sin(a)*r; a?g.lineTo(x,y):g.moveTo(x,y);} g.stroke();
+    label(g,'แก้วหู',w*0.58,h*0.82,12,ACC); label(g,'กระดูก 3 ชิ้น',w*0.72,h*0.28,11); label(g,'หูชั้นใน',w*0.89,h*0.82,12);
+  },
+  bat(g,w,h){ // ค้างคาว + อัลตราซาวด์
+    const bx=w*0.25, by=h*0.5, fl=Math.sin(T*8)*h*0.08;
+    g.fillStyle=INK; g.beginPath(); g.ellipse(bx,by,w*0.045,h*0.1,0,0,6.283); g.fill();
+    [-1,1].forEach(s=>{ g.beginPath(); g.moveTo(bx,by-h*0.05); g.lineTo(bx+s*w*0.17,by-h*0.2-fl); g.lineTo(bx+s*w*0.13,by+h*0.02);
+      g.lineTo(bx+s*w*0.08,by+h*0.1); g.closePath(); g.fill(); g.beginPath(); g.moveTo(bx+s*w*0.02,by-h*0.1); g.lineTo(bx+s*w*0.035,by-h*0.2); g.lineTo(bx+s*w*0.05,by-h*0.1); g.fill(); });
+    rings(g,bx+w*0.05,by,w*0.5,3,-0.5,0.5,ACC);
+    const mx=w*0.8; g.fillStyle=GOLD; g.beginPath(); g.ellipse(mx,by,w*0.02,h*0.05,0,0,6.283); g.fill();
+    g.fillStyle='rgba(201,153,58,.6)'; g.beginPath(); g.ellipse(mx-8,by-10,10,5,0.5,0,6.283); g.ellipse(mx+8,by-10,10,5,-0.5,0,6.283); g.fill();
+    rings(g,mx-w*0.03,by,w*0.35,2,Math.PI-0.6,Math.PI+0.6,BLUE,0.5);
+    label(g,'ส่งเสียงความถี่สูง > 20,000 Hz',w/2,h*0.1,12,ACC); label(g,'เหยื่อ',mx,h*0.72,12);
+  },
+  fork(g,w,h){ // ส้อมเสียง
+    const cx=w*0.4, sh=Math.sin(T*32)*3;
+    g.strokeStyle=INK; g.lineWidth=7; g.lineCap='round'; g.lineJoin='round';
+    g.beginPath(); g.moveTo(cx,h*0.9); g.lineTo(cx,h*0.6); g.stroke();
+    g.beginPath(); g.moveTo(cx-16+sh,h*0.14); g.lineTo(cx-16,h*0.5); g.quadraticCurveTo(cx-16,h*0.6,cx,h*0.6);
+    g.quadraticCurveTo(cx+16,h*0.6,cx+16,h*0.5); g.lineTo(cx+16-sh,h*0.14); g.stroke(); g.lineCap='butt';
+    rings(g,cx,h*0.3,w*0.5,4,-0.7,0.7,ACC); rings(g,cx,h*0.3,w*0.35,3,Math.PI-0.7,Math.PI+0.7,ACC);
+    label(g,'ส้อมเสียง',cx,h*0.98,13);
+  },
+  speaker(g,w,h){ // ลำโพง
+    const cx=w*0.3, cy=h*0.5, p=1+0.08*Math.sin(T*14);
+    g.fillStyle=INK; g.fillRect(cx-w*0.1,cy-h*0.38,w*0.2,h*0.76);
+    g.fillStyle=PAPER2; g.beginPath(); g.arc(cx,cy+h*0.13,h*0.16*p,0,6.283); g.fill(); g.beginPath(); g.arc(cx,cy-h*0.19,h*0.07*p,0,6.283); g.fill();
+    rings(g,cx+w*0.1,cy,w*0.6,4,-0.8,0.8,ACC);
+    label(g,'แอมพลิจูดมาก → เสียงดัง',w*0.7,h*0.1,12,ACC);
+  },
+  iron(g,w,h){ // แท่งโลหะ + พัลส์เสียง
+    const y=h*0.55, bh=h*0.3, x0=w*0.15, bw=w*0.78;
+    g.fillStyle='#b9b4a8'; g.fillRect(x0,y-bh/2,bw,bh); g.strokeStyle=INK; g.lineWidth=2; g.strokeRect(x0,y-bh/2,bw,bh);
+    const p=(T*0.5)%1; g.fillStyle='rgba(140,47,27,.45)'; g.fillRect(x0+p*bw-w*0.04,y-bh/2,w*0.08,bh);
+    g.save(); g.translate(w*0.1,y-bh/2-4); g.rotate(-0.5+0.5*Math.abs(Math.sin(T*3))); g.fillStyle='#7a5a2a'; g.fillRect(-3,-h*0.3,6,h*0.3); g.fillStyle=INK; g.fillRect(-14,-h*0.34,28,12); g.restore();
+    label(g,'ของแข็ง: เสียงเร็ว (เหล็ก ≈ 5,000 m/s)',w/2,h*0.13,12,ACC); label(g,'พัลส์เสียงเดินทางผ่านแท่งโลหะ',w/2,h*0.92,12);
+  },
+  thunder(g,w,h){ // ฟ้าแลบ–ฟ้าร้อง
+    g.fillStyle='#8c8c9c'; [[0.2,0.2,0.08],[0.28,0.16,0.1],[0.36,0.2,0.08],[0.28,0.24,0.09]].forEach(([a,b,r])=>{ g.beginPath(); g.arc(w*a,h*b,w*r*0.7,0,6.283); g.fill(); });
+    const fl=(T%2)<0.3; g.strokeStyle=fl?'#f5c400':'#a89050'; g.lineWidth=fl?5:2;
+    g.beginPath(); g.moveTo(w*0.3,h*0.3); g.lineTo(w*0.26,h*0.48); g.lineTo(w*0.32,h*0.5); g.lineTo(w*0.27,h*0.72); g.stroke();
+    rings(g,w*0.27,h*0.72,w*0.6,3,Math.PI*1.05,Math.PI*1.95,ACC,0.25);
+    g.strokeStyle=INK; g.lineWidth=3; g.beginPath(); g.arc(w*0.88,h*0.52,8,0,6.283); g.moveTo(w*0.88,h*0.6); g.lineTo(w*0.88,h*0.78); g.moveTo(w*0.82,h*0.66); g.lineTo(w*0.94,h*0.66); g.stroke();
+    label(g,'แสงมาถึงก่อน เสียงมาถึงทีหลัง',w*0.62,h*0.1,12,ACC); g.fillStyle='#6aa84f'; g.fillRect(0,h*0.8,w,h*0.2);
+  },
+  ambulance(g,w,h){ // ดอปเลอร์
+    const gy=h*0.72, xs=tt=>w*0.5+w*0.18*Math.sin(tt*0.7);
+    g.strokeStyle=BLUE; g.lineWidth=1.8;
+    for(let k=0;k<6;k++){ const age=(T*0.9+k*0.5)%3; g.globalAlpha=1-age/3; g.beginPath(); g.arc(xs(T-age),gy-h*0.15,age*w*0.14,0,6.283); g.stroke(); }
+    g.globalAlpha=1;
+    const cx=xs(T); g.fillStyle='#fff'; g.fillRect(cx-w*0.1,gy-h*0.26,w*0.2,h*0.2); g.strokeStyle=INK; g.lineWidth=2.5; g.strokeRect(cx-w*0.1,gy-h*0.26,w*0.2,h*0.2);
+    g.fillStyle='#d32f2f'; g.fillRect(cx-4,gy-h*0.22,8,h*0.12); g.fillRect(cx-h*0.06,gy-h*0.18,h*0.12,6);
+    g.fillStyle=Math.floor(T*6)%2?'#d32f2f':'#1976d2'; g.fillRect(cx-6,gy-h*0.3,12,h*0.04);
+    g.fillStyle=INK; [-0.06,0.06].forEach(d=>{ g.beginPath(); g.arc(cx+w*d*1.2,gy-h*0.06,h*0.045,0,6.283); g.fill(); });
+    g.fillRect(0,gy-h*0.015,w,3);
+    label(g,'วงคลื่นถี่ขึ้นด้านหน้า ห่างออกด้านหลัง',w/2,h*0.1,12,ACC);
+  },
+  tube(g,w,h){ // คลื่นนิ่งในหลอดเสียง
+    const x0=w*0.1,x1=w*0.9,y=h*0.5,th=h*0.3;
+    g.strokeStyle=INK; g.lineWidth=4; g.beginPath(); g.moveTo(x1,y-th); g.lineTo(x0,y-th); g.lineTo(x0,y+th); g.lineTo(x1,y+th); g.stroke();
+    g.strokeStyle=ACC; g.lineWidth=2.5; const c=Math.cos(T*6);
+    [1,-1].forEach(s=>{ g.beginPath(); for(let x=0;x<=1.001;x+=0.02){ const px=x0+(x1-x0)*x, py=y+s*th*0.85*Math.sin(Math.PI*x/2)*c; x?g.lineTo(px,py):g.moveTo(px,py);} g.stroke(); });
+    g.fillStyle=GOLD; for(let i=0;i<14;i++){ const x=x0+(i+.5)/14*(x1-x0); g.beginPath(); g.arc(x+6*Math.sin(Math.PI*(i+.5)/28*1)*c*(i/14),y,2.5,0,6.283); g.fill(); }
+    label(g,'ปลายปิด (บัพ)',x0+30,h*0.92,11); label(g,'ปลายเปิด (ปฏิบัพ)',x1-45,h*0.92,11); label(g,'คลื่นนิ่งในหลอด',w/2,h*0.1,13,ACC);
+  },
+  sonar(g,w,h){ // โซนาร์ / สะท้อนเสียง
+    g.fillStyle='rgba(47,95,138,.25)'; g.fillRect(0,h*0.3,w,h*0.7);
+    g.fillStyle='#7a5a2a'; g.beginPath(); g.moveTo(0,h); g.lineTo(0,h*0.85); g.quadraticCurveTo(w*0.5,h*0.75,w,h*0.88); g.lineTo(w,h); g.fill();
+    const sx=w*0.3; g.fillStyle=INK; g.beginPath(); g.moveTo(sx-w*0.08,h*0.2); g.lineTo(sx+w*0.08,h*0.2); g.lineTo(sx+w*0.05,h*0.29); g.lineTo(sx-w*0.05,h*0.29); g.fill();
+    const p=(T*0.4)%1, down=p<0.5, r=(down?p*2:(1-p)*2)*h*0.5+4;
+    g.strokeStyle=down?ACC:BLUE; g.lineWidth=2.5; g.beginPath(); g.arc(sx,h*0.29,r,1.0,2.14); g.stroke();
+    label(g,down?'ส่งคลื่นเสียงลงไป':'เสียงสะท้อนกลับมา',w*0.7,h*0.45,13,down?ACC:BLUE);
+    label(g,'ความลึก = vt / 2',w*0.7,h*0.6,12);
+  }
+};
+
+/* =====================================================================
+   5) STATE
+   ===================================================================== */
+let P = store('sw_player') || null;      // ผู้เล่นปัจจุบัน {name, cls, no}
+let G = { running:false };               // สถานะเกมปัจจุบัน
+const S = { hurtT:0, hitT:0, beam:-1, dead:false, hpShown:1, parts:[], texts:[], geom:{px:0,mx:0,my:0,gy:0,u:1} };
+
+/* =====================================================================
+   6) การวาดฉาก (Stage): ตัวละครบล็อก vs เจ้าเสียงรบกวน + เอฟเฟกต์
+   ===================================================================== */
+function burst(x,y,col,n,u=1){
+  for(let i=0;i<n;i++){
+    const a=Math.random()*6.283, v=(80+Math.random()*220)*u;
+    S.parts.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-120*u,rot:Math.random()*6,vr:(Math.random()-.5)*14,s:(4+Math.random()*6)*u,c:col,life:0.9+Math.random()*0.5});
+  }
+}
+function addText(t,x,y,c,size){ S.texts.push({t,x,y,c,size,life:1.2}); }
+
+/* ตอบถูก: ยิงคลื่นเสียงไปที่มอนสเตอร์ */
+function fxCorrect(gain){ S.beam=0; addText('+'+gain,S.geom.px,S.geom.gy-95*S.geom.u,'#2e7d32',22*S.geom.u); }
+/* ตอบผิด: ตัวละครบล็อกแตกกระจาย (OOF!) + จอสั่น */
+function fxWrong(){
+  const {px,gy,u}=S.geom; S.hurtT=1.2;
+  [['#f2c94c',-75],['#2f80ed',-45],['#f2c94c',-45],['#4caf50',-15],['#4caf50',-15],['#2f80ed',-55]].forEach(([c,dy])=>{
+    for(let i=0;i<2;i++) S.parts.push({x:px+(Math.random()-.5)*20*u,y:gy+dy*u,vx:(Math.random()-.5)*360*u,vy:-(150+Math.random()*250)*u,
+      rot:Math.random()*6,vr:(Math.random()-.5)*16,s:(9+Math.random()*8)*u,c,life:1.3});
+  });
+  addText('OOF!',px,gy-100*u,'#d32f2f',34*u); addText('-'+CONFIG.wrongScorePenalty,px+30*u,gy-70*u,'#b3261e',20*u);
+  const b=$('book'); b.classList.remove('shake'); void b.offsetWidth; b.classList.add('shake');
+}
+
+function drawAvatar(g,x,gy,u,alpha){
+  g.save(); g.globalAlpha=alpha; g.translate(x,gy);
+  g.fillStyle='#4caf50'; g.fillRect(-10*u,-30*u,9*u,30*u); g.fillRect(1*u,-30*u,9*u,30*u);
+  g.fillStyle='#2f80ed'; g.fillRect(-14*u,-62*u,28*u,32*u);
+  g.fillStyle='#f2c94c'; g.fillRect(-23*u,-62*u,9*u,28*u); g.fillRect(14*u,-62*u,9*u,28*u); g.fillRect(-11*u,-86*u,22*u,22*u);
+  g.fillStyle=INK; g.fillRect(-6*u,-79*u,4*u,5*u); g.fillRect(2*u,-79*u,4*u,5*u); g.fillRect(-5*u,-70*u,10*u,2*u);
+  g.restore();
+}
+
+function drawStage(g,w,h,dt){
+  const u=h/180, gy=h*0.8, px=w*0.2, mx=w*0.78, my=gy-52*u;
+  S.geom={px,mx,my,gy,u};
+  S.hurtT=Math.max(0,S.hurtT-dt); S.hitT=Math.max(0,S.hitT-dt);
+  if(G.monMax) S.hpShown+=(G.monHp-S.hpShown)*Math.min(1,dt*6);
+
+  // ฉากหลัง: ท้องฟ้า + พื้น (baseplate)
+  const sk=g.createLinearGradient(0,0,0,h); sk.addColorStop(0,'#cfe3ee'); sk.addColorStop(1,'#f6ecd2'); g.fillStyle=sk; g.fillRect(0,0,w,h);
+  g.fillStyle='#6aa84f'; g.fillRect(0,gy,w,h-gy); g.strokeStyle='rgba(0,0,0,.18)'; g.lineWidth=1;
+  for(let x=0;x<=w;x+=w/12){ g.beginPath(); g.moveTo(x,gy); g.lineTo(x,h); g.stroke(); }
+  g.beginPath(); g.moveTo(0,gy+(h-gy)/2); g.lineTo(w,gy+(h-gy)/2); g.stroke();
+
+  // เจ้าเสียงรบกวน
+  if(!S.dead){
+    const sh=S.hitT>0?(Math.random()-.5)*8*u:0, R=44*u*(1+0.04*Math.sin(T*6));
+    rings(g,mx-30*u,my+18*u,w*0.38,3,Math.PI-0.5,Math.PI+0.5,'rgba(123,63,160,.8)',0.5);
+    g.save(); g.translate(mx+sh,my);
+    g.fillStyle=S.hitT>0?'#ffffff':'#7b3fa0'; g.strokeStyle=INK; g.lineWidth=2.5; g.beginPath();
+    for(let i=0;i<20;i++){ const a=i/20*6.283+T*0.3, r=i%2?R*0.82:R*1.1; i?g.lineTo(Math.cos(a)*r,Math.sin(a)*r):g.moveTo(Math.cos(a)*r,Math.sin(a)*r); }
+    g.closePath(); g.fill(); g.stroke();
+    [-1,1].forEach(s=>{ g.fillStyle='#fff'; g.beginPath(); g.arc(s*16*u,-10*u,9*u,0,6.283); g.fill(); g.stroke();
+      g.fillStyle='#d32f2f'; g.beginPath(); g.arc(s*14*u,-8*u,4*u,0,6.283); g.fill();
+      g.beginPath(); g.moveTo(s*28*u,-26*u); g.lineTo(s*7*u,-17*u); g.lineWidth=3; g.stroke(); });
+    g.fillStyle=INK; g.fillRect(-18*u,10*u,36*u,16*u); g.strokeStyle='#fff'; g.lineWidth=1.5;
+    for(let i=-12;i<=12;i+=6){ g.beginPath(); g.moveTo(i*u,10*u); g.lineTo(i*u,26*u); g.stroke(); }
+    g.restore();
+    // แถบพลังมอนสเตอร์
+    const bw=100*u, bx=mx-bw/2, by=my-72*u, frac=G.monMax?Math.max(0,S.hpShown/G.monMax):1;
+    g.fillStyle='rgba(0,0,0,.35)'; g.fillRect(bx,by,bw,9*u); g.fillStyle='#e53935'; g.fillRect(bx,by,bw*frac,9*u);
+    g.strokeStyle=INK; g.lineWidth=2; g.strokeRect(bx,by,bw,9*u);
+    label(g,'เจ้าเสียงรบกวน',mx,by-4*u,Math.max(11,10*u),INK);
+  }
+
+  // คลื่นเสียงที่ยิงออกไป
+  if(S.beam>=0){
+    S.beam+=dt*2.2; const bx=px+24*u+(mx-px-70*u)*Math.min(1,S.beam), by=gy-48*u;
+    g.strokeStyle=ACC; g.lineWidth=Math.max(2,3*u); g.beginPath();
+    for(let i=-30;i<=30;i++){ const x=bx+i*u, y=by+Math.sin(i*0.55-T*30)*9*u*(1-Math.abs(i)/32); i>-30?g.lineTo(x,y):g.moveTo(x,y); }
+    g.stroke();
+    if(S.beam>=1){
+      S.beam=-1; S.hitT=0.45; burst(mx,my,'#ffd54f',16,u);
+      if(G.monHp<=0){ S.dead=true; burst(mx,my,'#7b3fa0',50,u); addText('ปราบสำเร็จ!',mx-20*u,my-10*u,'#2e7d32',28*u); }
+    }
+  }
+
+  // ผู้เล่น (ซ่อนระหว่างแตกกระจาย แล้วเกิดใหม่แบบกะพริบ)
+  if(S.hurtT<=0) drawAvatar(g,px,gy,u,1);
+  else if(S.hurtT<0.4) drawAvatar(g,px,gy,u,(Math.floor(T*20)%2)?0.3:1);
+
+  // อนุภาค (ชิ้นส่วนบล็อก/ประกายตี)
+  for(let i=S.parts.length-1;i>=0;i--){
+    const p=S.parts[i]; p.life-=dt; if(p.life<=0){ S.parts.splice(i,1); continue; }
+    p.vy+=700*u*dt; p.x+=p.vx*dt; p.y+=p.vy*dt; p.rot+=p.vr*dt;
+    if(p.y>gy+10*u){ p.y=gy+10*u; p.vy*=-0.4; p.vx*=0.7; }
+    g.save(); g.globalAlpha=Math.min(1,p.life*2); g.translate(p.x,p.y); g.rotate(p.rot); g.fillStyle=p.c; g.fillRect(-p.s/2,-p.s/2,p.s,p.s);
+    g.strokeStyle=INK; g.lineWidth=1; g.strokeRect(-p.s/2,-p.s/2,p.s,p.s); g.restore();
+  }
+  // ข้อความลอย
+  for(let i=S.texts.length-1;i>=0;i--){
+    const t=S.texts[i]; t.life-=dt; if(t.life<=0){ S.texts.splice(i,1); continue; }
+    t.y-=34*u*dt; g.globalAlpha=Math.min(1,t.life*2); g.font='900 '+t.size+'px Sarabun,Tahoma,sans-serif'; g.textAlign='center';
+    g.lineWidth=4; g.strokeStyle='#fff'; g.strokeText(t.t,t.x,t.y); g.fillStyle=t.c; g.fillText(t.t,t.x,t.y); g.globalAlpha=1;
+  }
+}
+
+/* ภาพประกอบหน้าเมนู: คลื่นไซน์ซ้อนกันและสัญลักษณ์ฟิสิกส์ลอย */
+function drawHero(g,w,h){
+  const bg=g.createLinearGradient(0,0,0,h); bg.addColorStop(0,'#fbf3dc'); bg.addColorStop(1,'#ecd9a6'); g.fillStyle=bg; g.fillRect(0,0,w,h);
+  rings(g,w*0.5,h*0.5,w*0.5,4,0,6.283,'rgba(140,47,27,.35)',0.2);
+  [[ACC,0.05,1,0],[BLUE,0.035,0.7,1.5],[GOLD,0.07,0.5,3]].forEach(([c,k,a,ph])=>{
+    g.strokeStyle=c; g.lineWidth=3; g.beginPath();
+    for(let x=0;x<=w;x+=3){ const y=h*0.5+h*0.22*a*Math.sin(x*k-T*2+ph)*Math.sin(x/w*Math.PI); x?g.lineTo(x,y):g.moveTo(x,y); }
+    g.stroke();
+  });
+  ['Hz','dB','λ','v = fλ','f','♪'].forEach((s,i)=>{ label(g,s,w*(0.12+i*0.15),h*(0.2+0.08*Math.sin(T*0.8+i*1.7)),Math.max(14,h*0.09),'rgba(43,29,14,.6)'); });
+}
+
+/* ห้องทดลอง: วาดคลื่นของผู้เล่น (ทึบ) เทียบเป้าหมาย (ประ) */
+function drawLab(g,w,h){
+  g.fillStyle='#fbf3dc'; g.fillRect(0,0,w,h); g.strokeStyle='rgba(0,0,0,.12)'; g.lineWidth=1;
+  for(let i=1;i<10;i++){ g.beginPath(); g.moveTo(w*i/10,0); g.lineTo(w*i/10,h); g.stroke(); }
+  for(let i=1;i<4;i++){ g.beginPath(); g.moveTo(0,h*i/4); g.lineTo(w,h*i/4); g.stroke(); }
+  const r=G.cur; if(!r||r.type!=='lab') return;
+  const wave=(f,a)=>{ g.beginPath(); for(let x=0;x<=w;x+=2){ const y=h/2-h*0.42*(a/100)*Math.sin(x/w*(f/100)*6.283+T*3); x?g.lineTo(x,y):g.moveTo(x,y);} g.stroke(); };
+  if(r.target){ g.setLineDash([7,6]); g.strokeStyle=BLUE; g.lineWidth=3; wave(r.target.f,r.target.a); g.setLineDash([]); }
+  const f=+$('sf').value, a=+$('sa').value; g.strokeStyle=ACC; g.lineWidth=3.5; wave(f,a);
+  label(g,'f = '+f+' Hz   A = '+a+'%'+(r.hideLambda?'':'   λ = '+(340/f).toFixed(2)+' m'),w/2,h-8,12);
+  label(g,'(ภาพย่อส่วน: 100 Hz = 1 รอบ)',w-6,14,10,'#7a6a4a','right');
+}
+
+function drawIllo(g,w,h){
+  const r=G.cur; if(!r||!r.img||!ILLO[r.img]) return;
+  g.fillStyle='#fbf3dc'; g.fillRect(0,0,w,h);
+  ILLO[r.img](g,w,h);
+  label(g,'ภาพประกอบ: '+r.term,8,16,11,'#7a6a4a','left');
+}
+
+/* =====================================================================
+   7) GAME LOGIC
+   ===================================================================== */
+function prepareMcq(q){
+  const order=shuffle(q.c.map((_,i)=>i));
+  return { type:'mcq', term:q.term, img:q.img, q:q.q, exp:q.exp, choices:order.map(i=>q.c[i]), ans:order.indexOf(q.a) };
+}
+function buildRounds(){
+  const qs=shuffle(QUESTIONS).slice(0,CONFIG.questionsPerRun).map(prepareMcq);
+  const labs=shuffle(LABS).slice(0,CONFIG.labsPerRun).map(l=>Object.assign({type:'lab',img:null},l));
+  labs.forEach((l,i)=>qs.splice(3+i*4,0,l)); // แทรกห้องทดลองข้อที่ 4 และ 8
+  return qs;
+}
+
+function startGame(){
+  SND.init(); SND.startBgm();
+  const rounds=buildRounds();
+  G={ running:true, ended:false, rounds, idx:0, score:0, time:CONFIG.totalTime, hearts:CONFIG.hearts, streak:0, best:0,
+      correct:0, wrong:0, timerOn:false, locked:true, cur:null, roundStart:0, pending:null,
+      monMax:Math.ceil(rounds.length*CONFIG.winRatio) };
+  G.monHp=G.monMax; S.hpShown=G.monMax; S.dead=false; S.beam=-1; S.parts=[]; S.texts=[]; S.hurtT=0; S.hitT=0;
+  $('dWho').textContent='ผู้เล่น: '+P.name+' ('+P.cls+' เลขที่ '+P.no+')';
+  go('sGame'); showRound();
+}
+
+function showRound(){
+  const r=G.rounds[G.idx]; G.cur=r; G.locked=false; G.timerOn=true; G.roundStart=G.time; G.pending=null;
+  $('eNo').textContent='รายการที่ '+(G.idx+1)+' / '+G.rounds.length;
+  $('eTag').textContent=r.type==='lab'?'ห้องทดลอง':'ปรนัย';
+  $('eTerm').textContent=r.term; $('ePhon').textContent='n. · ฟิสิกส์ — คลื่นเสียง';
+  $('eQ').textContent=r.q; $('feedback').hidden=true;
+  if(r.type==='mcq'){
+    $('lab').hidden=true; $('illo').hidden=false; $('choices').hidden=false;
+    const box=$('choices'); box.innerHTML='';
+    r.choices.forEach((c,i)=>{
+      const b=document.createElement('button'); b.className='choice';
+      b.innerHTML='<b>'+'กขคง'[i]+'</b><span></span>'; b.lastChild.textContent=c;
+      b.addEventListener('click',()=>answerMcq(i)); box.appendChild(b);
+    });
+  } else {
+    $('choices').hidden=true; $('illo').hidden=true; $('lab').hidden=false;
+    $('sf').value=r.start.f; $('sa').value=r.start.a; syncLabLabels(); $('btnCheck').disabled=false;
+  }
+  updateDash();
+}
+
+function answerMcq(i){
+  if(G.locked) return; G.locked=true; const r=G.cur, btns=$('choices').children;
+  for(const b of btns) b.disabled=true;
+  btns[r.ans].classList.add('right'); if(i!==r.ans) btns[i].classList.add('wrong');
+  resolve(i===r.ans,r);
+}
+function checkLab(){
+  if(G.locked) return; G.locked=true; $('btnCheck').disabled=true;
+  resolve(G.cur.check(+$('sf').value,+$('sa').value),G.cur);
+}
+function syncLabLabels(){ $('vf').textContent=$('sf').value; $('va').textContent=$('sa').value; }
+
+/* ตัดสินผลหนึ่งข้อ: ให้คะแนน/ลงโทษ + แสดงเฉลย */
+function resolve(ok,r){
+  G.timerOn=false; G.locked=true; let title;
+  if(ok){
+    G.correct++; G.streak++; G.best=Math.max(G.best,G.streak);
+    const spent=Math.max(0,G.roundStart-G.time);
+    const speed=Math.max(0,Math.round(CONFIG.speedBonusMax-spent*2));
+    const combo=Math.min(G.streak-1,5)*10;
+    const gain=(r.type==='lab'?CONFIG.labScore:CONFIG.baseScore)+speed+combo;
+    G.score+=gain; G.monHp=Math.max(0,G.monHp-1);
+    SND.correct(); fxCorrect(gain); title='✔ ถูกต้อง! +'+gain+' คะแนน';
+  } else {
+    G.wrong++; G.streak=0; G.hearts--; G.score=Math.max(0,G.score-CONFIG.wrongScorePenalty);
+    G.time=Math.max(0,G.time-CONFIG.wrongTimePenalty);
+    SND.oof(); fxWrong(); title='✘ OOF! ตอบผิด  −'+CONFIG.wrongScorePenalty+' คะแนน  −'+CONFIG.wrongTimePenalty+' วินาที';
+  }
+  let btn='ข้อต่อไป ▶';
+  if(G.monHp<=0){ G.pending={win:true}; btn='🎉 ปราบสำเร็จ! ดูผลลัพธ์'; }
+  else if(G.hearts<=0){ G.pending={win:false}; btn='พลังชีวิตหมด – ดูผลลัพธ์'; }
+  else if(G.time<=0){ G.pending={win:false}; btn='หมดเวลา – ดูผลลัพธ์'; }
+  else if(G.idx>=G.rounds.length-1){ G.pending={win:false}; btn='จบโจทย์ – ดูผลลัพธ์'; }
+  $('fbTitle').textContent=title; $('fbTitle').className=ok?'ok':'no';
+  $('fbExp').textContent=r.exp; $('btnNext').textContent=btn; $('feedback').hidden=false;
+  updateDash();
+  setTimeout(()=>{ try{ $('btnNext').scrollIntoView({block:'nearest',behavior:'smooth'}); }catch(e){} },120);
+}
+function nextStep(){
+  if(!G.running||!G.locked||$('feedback').hidden) return;
+  if(G.pending) return endGame(G.pending.win);
+  G.idx++; showRound();
+}
+
+function endGame(win){
+  if(G.ended) return; G.ended=true; G.running=false; G.timerOn=false;
+  let bonus=0; if(win){ bonus=Math.floor(G.time)*2; G.score+=bonus; }
+  const answered=G.correct+G.wrong, acc=answered?Math.round(G.correct/answered*100):0;
+  const rec={ name:P.name, cls:P.cls, no:P.no, score:G.score, correct:G.correct, total:G.rounds.length,
+              timeLeft:Math.floor(G.time), win:!!win, date:new Date().toISOString() };
+  const board=store('sw_board')||[]; board.push(rec); board.sort((a,b)=>b.score-a.score); store('sw_board',board.slice(0,200));
+  let rank='มือใหม่หัดฟัง'; if(acc>=90) rank='ราชานักคลื่นเสียง'; else if(acc>=75) rank='นักวิชาการคลื่น'; else if(acc>=50) rank='ผู้ฝึกหัดฟิสิกส์';
+  $('rTitle').textContent=win?'ปราบสำเร็จ!':'ยังไม่สำเร็จ';
+  $('rSub').textContent='ฉายา: '+rank; $('rScore').textContent=G.score;
+  const rows=[['ตอบถูก',G.correct+' / '+G.rounds.length+'  ('+acc+'%)'],['คอมโบสูงสุด',G.best],
+    ['เวลาที่เหลือ',fmtTime(G.time)],['โบนัสเวลา',win?'+'+bonus:'–'],['พลังชีวิตที่เหลือ',Math.max(0,G.hearts)+' / '+CONFIG.hearts]];
+  const box=$('rStats'); box.innerHTML='';
+  rows.forEach(([a,b])=>{ const d=document.createElement('div'); d.className='stat'; const s1=document.createElement('span'); s1.textContent=a; const s2=document.createElement('b'); s2.textContent=b; d.append(s1,s2); box.appendChild(d); });
+  go('sResult'); win?SND.win():SND.lose();
+}
+
+/* ---------- Dashboard ---------- */
+function updateDash(){
+  if(!G.cur) return;
+  setText($('dScore'),G.score); setText($('dTime'),fmtTime(G.time));
+  $('dBar').style.width=(Math.max(0,G.time)/CONFIG.totalTime*100).toFixed(1)+'%';
+  $('dTimeBox').classList.toggle('low',G.time<20);
+  setText($('dHearts'),'❤'.repeat(Math.max(0,G.hearts))+'🖤'.repeat(CONFIG.hearts-Math.max(0,G.hearts)));
+  setText($('dStreak'),G.streak); setText($('dRound'),(G.idx+1)+'/'+G.rounds.length);
+  const n=G.correct+G.wrong; setText($('dAcc'),n?Math.round(G.correct/n*100)+'%':'–');
+}
+
+/* =====================================================================
+   8) UI / NAVIGATION / LEADERBOARD
+   ===================================================================== */
+function go(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  $(id).classList.add('active');
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('on',t.dataset.go===id));
+  if(id==='sMenu') renderMenu(); if(id==='sBoard') renderBoard();
+  $('chipPlayer').textContent=P?'👤 '+P.name:'';
+}
+function tryGo(id){
+  if(G.running&&!G.ended){ if(!confirm('ออกจากเกมตอนนี้? ความคืบหน้าจะหายไป')) return; G.running=false; G.ended=true; }
+  SND.click(); go(id);
+}
+function renderMenu(){
+  $('mName').textContent=P?P.name:'';
+  const mine=(store('sw_board')||[]).filter(r=>P&&r.name===P.name&&r.cls===P.cls&&String(r.no)===String(P.no));
+  $('mBest').textContent=mine.length?Math.max(...mine.map(r=>r.score)):0; $('mPlays').textContent=mine.length;
+}
+function renderBoard(){
+  const t=$('tbl'); t.innerHTML=''; const board=store('sw_board')||[];
+  const head=document.createElement('tr'); ['#','ชื่อ','ชั้น/เลขที่','คะแนน','ถูก','ผล'].forEach(h=>{ const th=document.createElement('th'); th.textContent=h; head.appendChild(th); }); t.appendChild(head);
+  if(!board.length){ const tr=document.createElement('tr'); const td=document.createElement('td'); td.colSpan=6; td.textContent='ยังไม่มีข้อมูล – เริ่มเล่นเลย!'; tr.appendChild(td); t.appendChild(tr); return; }
+  board.slice(0,10).forEach((r,i)=>{
+    const tr=document.createElement('tr'); if(P&&r.name===P.name&&r.cls===P.cls&&String(r.no)===String(P.no)) tr.className='me';
+    [i+1,r.name,r.cls+' / '+r.no,r.score,r.correct+'/'+r.total,r.win?'ปราบได้':'–'].forEach(v=>{ const td=document.createElement('td'); td.textContent=v; tr.appendChild(td); });
+    t.appendChild(tr);
+  });
+}
+/* ส่งออกผลเป็น CSV (เปิดใน Excel ได้ รองรับภาษาไทย) */
+function downloadCsv(){
+  const board=store('sw_board')||[];
+  const rows=[['ชื่อ','ชั้น','เลขที่','คะแนน','ตอบถูก','จำนวนข้อ','เวลาที่เหลือ(วินาที)','ผล','วันที่']]
+    .concat(board.map(r=>[r.name,r.cls,r.no,r.score,r.correct,r.total,r.timeLeft,r.win?'ปราบได้':'ไม่สำเร็จ',r.date]));
+  const csv=rows.map(r=>r.map(v=>'"'+String(v).replace(/"/g,'""')+'"').join(',')).join('\r\n');
+  const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8'}));
+  a.download='คะแนนคลื่นเสียง.csv'; document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* =====================================================================
+   9) EVENT HANDLING
+   ===================================================================== */
+document.addEventListener('pointerdown',()=>{ SND.init(); SND.startBgm(); });
+document.querySelectorAll('[data-go]').forEach(el=>el.addEventListener('click',()=>{
+  if(!P&&el.dataset.go!=='sHelp'&&el.dataset.go!=='sBoard'){ go('sLogin'); return; } tryGo(el.dataset.go);
+}));
+$('btnMute').addEventListener('click',()=>{ SND.init(); $('btnMute').textContent=SND.toggleMute()?'🔇':'🔊'; });
+$('btnLogin').addEventListener('click',()=>{
+  const name=$('inName').value.trim(), cls=$('inClass').value.trim(), no=$('inNo').value.trim();
+  if(!name||!cls||!no){ $('loginErr').textContent='กรุณากรอก ชื่อ ชั้น และเลขที่ ให้ครบ'; return; }
+  P={name,cls,no}; store('sw_player',P); $('loginErr').textContent=''; SND.click(); go('sMenu');
+});
+$('btnSwitch').addEventListener('click',()=>{ P=null; try{localStorage.removeItem('sw_player');}catch(e){} $('inName').value=''; go('sLogin'); });
+$('btnStart').addEventListener('click',startGame);
+$('btnAgain').addEventListener('click',startGame);
+$('btnQuit').addEventListener('click',()=>tryGo('sMenu'));
+$('btnNext').addEventListener('click',()=>{ SND.click(); nextStep(); });
+$('btnCheck').addEventListener('click',checkLab);
+$('btnTone').addEventListener('click',()=>{ SND.init(); SND.tone(+$('sf').value,0.9,'sine',+$('sa').value/100*0.3); });
+$('sf').addEventListener('input',syncLabLabels); $('sa').addEventListener('input',syncLabLabels);
+$('btnCsv').addEventListener('click',downloadCsv); $('btnCsvR').addEventListener('click',downloadCsv);
+$('btnClear').addEventListener('click',()=>{ if(confirm('ล้างข้อมูลอันดับทั้งหมดในเครื่องนี้?')){ try{localStorage.removeItem('sw_board');}catch(e){} renderBoard(); } });
+document.addEventListener('keydown',e=>{
+  if(!G.running||!$('sGame').classList.contains('active')) return;
+  if(e.key==='Enter'){ nextStep(); return; }
+  const n=parseInt(e.key,10);
+  if(G.cur&&G.cur.type==='mcq'&&n>=1&&n<=4&&!G.locked) answerMcq(n-1);
+});
+
+/* =====================================================================
+   10) MAIN LOOP (requestAnimationFrame) – วาดเฉพาะ canvas ที่มองเห็น
+   ===================================================================== */
+const DRAWERS={ hero:drawHero, stage:drawStage, illo:drawIllo, lab:drawLab };
+const CANVASES=[...document.querySelectorAll('canvas[data-draw]')];
+let last=performance.now();
+function frame(now){
+  const dt=Math.min(0.05,(now-last)/1000); last=now; T+=dt;
+  if(G.running&&G.timerOn){
+    G.time-=dt; if(G.time<=0){ G.time=0; endGame(false); }
+    updateDash();
+  }
+  for(const c of CANVASES){ const f=fit(c); if(f) DRAWERS[c.dataset.draw](f.g,f.w,f.h,dt); }
+  requestAnimationFrame(frame);
+}
+document.addEventListener('visibilitychange',()=>{ if(SND.ctx){ document.hidden?SND.ctx.suspend():SND.ctx.resume(); } });
+
+/* เริ่มต้น: ถ้ามีข้อมูลผู้เล่นในเครื่อง ข้ามหน้าลงทะเบียนไปเมนู */
+go(P?'sMenu':'sLogin');
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
